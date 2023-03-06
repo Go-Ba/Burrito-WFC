@@ -16,7 +16,9 @@ public class WFC_UI_Test : MonoBehaviour
     [SerializeField] int maxRetries = 3; //how many times to retry with a new seed if this seed fails
     [SerializeField] int seed = -1;  //seed -1 is for random seed, otherwise choose a specific seed
     public void GenerateWithInspector() 
-        => image.texture = WFC.GetOverlapModel(sprite, width, height, sampleTileSize, periodicInput, periodicOutput, symmetry).Run(seed, propagationLimit, maxRetries);
+        => image.texture = WFC.GetOverlapModel(sprite, width, height, sampleTileSize, periodicInput, periodicOutput, symmetry)
+        .Run(seed, propagationLimit, maxRetries)
+        .GetTextureFromModel();
     private void Start() 
         => GenerateWithInspector();
     private void Update()

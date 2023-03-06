@@ -55,11 +55,12 @@ public static class WFC
             width = _width;
             height = _height;
         }
+        //this gets called first to run the model
         //when calling this function, start the retry count at 0
-        public Texture2D Run() => GetTextureFromModel(-1, 1000, 3, 0);
-        public Texture2D Run(int _propagationLimit, int _maxRetries) => GetTextureFromModel(-1, _propagationLimit, _maxRetries, 0);
-        public Texture2D Run(int _seed, int _propagationLimit, int _maxRetries) => GetTextureFromModel(_seed, _propagationLimit, _maxRetries, 0);
-        Texture2D GetTextureFromModel(int _seed, int _propagationLimit, int _maxRetries, int _retryCount)
+        public TextureModel Run() => RunModel(-1, 1000, 3, 0);
+        public TextureModel Run(int _propagationLimit, int _maxRetries) => RunModel(-1, _propagationLimit, _maxRetries, 0);
+        public TextureModel Run(int _seed, int _propagationLimit, int _maxRetries) => RunModel(_seed, _propagationLimit, _maxRetries, 0);
+        TextureModel RunModel(int _seed, int _propagationLimit, int _maxRetries, int _retryCount)
         {
             int seed = _seed == -1 ? Random.Range(0, int.MaxValue) : _seed;
             Debug.Log($"seed {seed}");
@@ -71,12 +72,16 @@ public static class WFC
                     //need to clear the model after running it so that it is back to base state to run again
                     //at least that seems to be the behaviour based on my observations of the bugs
                     model.ResetModel(); 
-                    return GetTextureFromModel(seed + 1, _propagationLimit, _maxRetries, _retryCount + 1);
+                    return RunModel(seed + 1, _propagationLimit, _maxRetries, _retryCount + 1);
                 }
                 Debug.LogError($"Failed to run overlap model after {_retryCount} retries");
                 return null;
             }
-
+            return this;
+        }
+        //after running the model, call this to get a texture
+        public Texture2D GetTextureFromModel()
+        {
             Texture2D newTex = new Texture2D(width, height);
             for (int x = 0; x < width; x++)
             {
@@ -94,6 +99,26 @@ public static class WFC
             newTex.filterMode = FilterMode.Point;
             newTex.Apply();
             return newTex;
+
+        }
+        //after running the model, call this to get a color grid
+        public Color[,] GetColorGridFromModel()
+        {
+            Color[,] output = new Color[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    //retrieve the color indeces from the model result
+                    //then convert it to colors from the color list
+                    int v = (int)model.Sample(x, y);
+                    if (v < colors.Count)
+                        output[x, y] = colors[v];
+                    else
+                        output[x, y] = Color.clear;
+                }
+            }
+            return output;
         }
     }
 }

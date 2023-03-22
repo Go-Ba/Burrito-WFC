@@ -9,9 +9,17 @@ public static class WFC
         => GetOverlapModel(_sprite, _width, _height, _N, _periodicInput, _periodicOutput, _symmetry, 0);
     public static TextureModel GetOverlapModel(Sprite _sprite, int _width, int _height, int _N, bool _periodicInput, bool _periodicOutput, int _symmetry, int _ground)
     {
+        //when periodic output is turned off, it doesn't generate the top and rightmost N-1 pixels
+        //this adds an extra N-1 pixels and then they will be cut off later
+        if (!_periodicOutput)
+        {
+            _width += _N - 1;
+            _height += _N - 1;
+        }
+
         byte[,] sample = SpriteToSample(_sprite, out List<Color> colors);
         var overlapModel = new OverlappingModel(sample, _N, _width, _height, _periodicInput, _periodicOutput, _symmetry, _ground);
-        return new TextureModel(_width, _height, overlapModel, colors);
+        return new TextureModel(_width, _height, overlapModel, colors, _periodicOutput, _N);
     }
     static byte[,] SpriteToSample(Sprite _sprite, out List<Color> _colors)
     {
@@ -48,12 +56,16 @@ public static class WFC
         List<Color> colors;
         int width;
         int height;
-        public TextureModel(int _width, int _height, OverlappingModel _model, List<Color> _colors)
+        bool periodicOutput;
+        int tileSize;
+        public TextureModel(int _width, int _height, OverlappingModel _model, List<Color> _colors, bool _periodicOutput, int _tileSize)
         {
             model = _model;
             colors = _colors;
             width = _width;
             height = _height;
+            periodicOutput = _periodicOutput;
+            tileSize = _tileSize;
         }
         //this gets called first to run the model
         //when calling this function, start the retry count at 0
@@ -82,6 +94,16 @@ public static class WFC
         //after running the model, call this to get a texture
         public Texture2D GetTextureFromModel()
         {
+            //when periodic output is turned off, it doesn't generate the top and rightmost N-1 pixels
+            //this removes the extra N-1 pixels which were added on to account for that
+            int width = this.width;
+            int height = this.height;
+            if (!periodicOutput)
+            {
+                width -= tileSize - 1;
+                height -= tileSize - 1;
+            }
+            
             Texture2D newTex = new Texture2D(width, height);
             for (int x = 0; x < width; x++)
             {
@@ -104,6 +126,16 @@ public static class WFC
         //after running the model, call this to get a color grid
         public Color[,] GetColorGridFromModel()
         {
+            //when periodic output is turned off, it doesn't generate the top and rightmost N-1 pixels
+            //this removes the extra N-1 pixels which were added on to account for that
+            int width = this.width;
+            int height = this.height;
+            if (!periodicOutput)
+            {
+                width -= 2;
+                height -= 2;
+            }
+
             Color[,] output = new Color[width, height];
             for (int x = 0; x < width; x++)
             {

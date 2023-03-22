@@ -130,14 +130,14 @@ namespace BurritoWFC
             //after running the model, call this to get a color grid
             public Color[,] GetColorGridFromModel()
             {
-                //when periodic output is turned off, it doesn't generate the top and rightmost 2 pixels
-                //this removes the extra 2 pixels which were added on to account for that
+                //when periodic output is turned off, it doesn't generate the top and rightmost N-1 pixels
+                //this removes the extra N-1 pixels which were added on to account for that
                 int width = this.width;
                 int height = this.height;
                 if (!periodicOutput)
                 {
-                    width -= 2;
-                    height -= 2;
+                    width -= tileSize - 1;
+                    height -= tileSize - 1;
                 }
 
                 Color[,] output = new Color[width, height];
@@ -152,6 +152,35 @@ namespace BurritoWFC
                             output[x, y] = colors[v];
                         else
                             output[x, y] = Color.clear;
+                    }
+                }
+                return output;
+            }
+            //after running the model, call this to get a bool grid
+            public bool[,] GetBoolGridFromModel(Color _trueColor)
+            {
+                //when periodic output is turned off, it doesn't generate the top and rightmost N-1 pixels
+                //this removes the extra N-1 pixels which were added on to account for that
+                int width = this.width;
+                int height = this.height;
+                if (!periodicOutput)
+                {
+                    width -= tileSize - 1;
+                    height -= tileSize - 1;
+                }
+
+                bool[,] output = new bool[width, height];
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        //retrieve the color indeces from the model result
+                        //then convert it to colors from the color list
+                        int v = (int)model.Sample(x, y);
+                        if (v < colors.Count)
+                            output[x, y] = colors[v] == _trueColor;
+                        else
+                            output[x, y] = false;
                     }
                 }
                 return output;
